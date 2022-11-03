@@ -1,0 +1,122 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    job: failing-cron-shared-volume
+  name: failing-cron-shared-volume
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            job: failing-cron-shared-volume
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: primary
+            image: ubuntu:22.04
+            command:
+            - /bin/bash
+            - -c
+            args:
+            - |
+              # let haproxy start up
+              sleep 10
+
+              cat /not/a/real/file/so/this/will/error
+              exit_code=$?
+
+              if [ $exit_code -ne 0 ]
+              then
+                echo -n "sad" > /opt/exit-signals/EXIT
+              else
+                echo -n "happy" >  /opt/exit-signals/EXIT
+              fi
+
+              exit $exit_code
+            volumeMounts:
+            - mountPath: /opt/exit-signals
+              name: exit-signals
+          - image: haproxy:2.6
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 9000
+              timeoutSeconds: 1
+            name: haproxy
+            ports:
+            - containerPort: 9000
+              protocol: TCP
+            command:
+            - /bin/bash
+            - -c
+            args:
+            - |
+              haproxy -f /usr/local/etc/haproxy/haproxy.cfg &
+              CHILD_PID=$!
+
+              (
+                while true
+                do
+                  if [ -f /opt/exit-signals/EXIT ]
+                  then
+                    kill $CHILD_PID
+                    echo "Killed $CHILD_PID because the main container terminated."
+                  fi
+                  sleep 1
+                done
+              ) &
+
+              wait $CHILD_PID
+              if [ -f /opt/exit-signals/EXIT ]
+              then
+                exit_status=$(cat /opt/exit-signals/EXIT)
+                rm /opt/exit-signals/EXIT
+
+                if [ "$exit_status" = "happy" ]
+                then
+                  echo "Job completed successfully."
+                  exit 0
+                else
+                  echo "Job failed."
+                  exit 1
+                fi
+              fi
+            readinessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 9000
+              timeoutSeconds: 1
+            resources:
+              limits:
+                cpu: 500m
+                memory: 500Mi
+              requests:
+                cpu: 100m
+                memory: 100Mi
+            volumeMounts:
+            - name: haproxy-config
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+            - mountPath: /opt/exit-signals
+              name: exit-signals
+          volumes:
+          - name: haproxy-config
+            configMap:
+              name: haproxy-config
+          - emptyDir: {}
+            name: exit-signals
