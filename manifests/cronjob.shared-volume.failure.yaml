@@ -44,7 +44,8 @@ spec:
             volumeMounts:
             - mountPath: /opt/exit-signals
               name: exit-signals
-          - image: haproxy:2.6
+          - name: haproxy
+            image: haproxy:2.6
             imagePullPolicy: IfNotPresent
             livenessProbe:
               failureThreshold: 3
@@ -54,7 +55,6 @@ spec:
               tcpSocket:
                 port: 9000
               timeoutSeconds: 1
-            name: haproxy
             ports:
             - containerPort: 9000
               protocol: TCP
