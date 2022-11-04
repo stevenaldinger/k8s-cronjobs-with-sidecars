@@ -11,6 +11,8 @@ This repo demonstrates multiple strategies for handling Kubernetes CronJobs that
     ├── 00.haproxy.configmap.yaml
     ├── cronjob.naive.failure.yaml
     ├── cronjob.naive.success.yaml
+    ├── cronjob.pkill-nonroot.failure.yaml
+    ├── cronjob.pkill-nonroot.success.yaml
     ├── cronjob.pkill.failure-bad-exit.yaml
     ├── cronjob.pkill.failure.yaml
     ├── cronjob.pkill.success.yaml
