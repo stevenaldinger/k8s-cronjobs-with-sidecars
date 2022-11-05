@@ -1,6 +1,6 @@
 # Kubernetes CronJobs with Sidecars
 
-This repo demonstrates multiple strategies for handling Kubernetes CronJobs that require sidecars. For a more detailed explanation, please refer to the [blog](https://medium.com/teamsnap-engineering) it's meant to complement.
+This repo demonstrates multiple strategies for handling Kubernetes CronJobs that require sidecars. For a more detailed explanation, please refer to the [blog](https://medium.com/teamsnap-engineering/properly-running-kubernetes-jobs-with-sidecars-ddc04685d0dc) it's meant to complement.
 
 ## Repo Structure
 
