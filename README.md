@@ -17,7 +17,9 @@ This repo demonstrates multiple strategies for handling Kubernetes CronJobs that
     ├── cronjob.pkill.failure.yaml
     ├── cronjob.pkill.success.yaml
     ├── cronjob.shared-volume.failure.yaml
-    └── cronjob.shared-volume.success.yaml
+    ├── cronjob.shared-volume.success.yaml
+    ├── cronjob.sidecar.failure.yaml
+    └── cronjob.sidecar.success.yaml
 ```
 
 Each `cronjob.*.yaml` in the [manifests](./manifests) directory declares a CronJob with a "primary" job container (that would represent your custom job code) alongside an [HAProxy](http://www.haproxy.org/) sidecar that serves as an arbitrary dependency of the "primary" job.

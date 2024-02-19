@@ -1,0 +1,68 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    job: failing-cron-sidecar
+  name: failing-cron-sidecar
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Allow
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            job: failing-cron-sidecar
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+          - name: haproxy
+            image: haproxy:2.6
+            restartPolicy: Always
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 9000
+              timeoutSeconds: 1
+            ports:
+            - containerPort: 9000
+              protocol: TCP
+            readinessProbe:
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              tcpSocket:
+                port: 9000
+              timeoutSeconds: 1
+            resources:
+              limits:
+                cpu: 500m
+                memory: 500Mi
+              requests:
+                cpu: 100m
+                memory: 100Mi
+            volumeMounts:
+            - name: haproxy-config
+              mountPath: /usr/local/etc/haproxy/haproxy.cfg
+              subPath: haproxy.cfg
+          volumes:
+          - name: haproxy-config
+            configMap:
+              name: haproxy-config
+          containers:
+          - name: primary
+            image: ubuntu:22.04
+            command:
+            - /bin/bash
+            - -c
+            args:
+            - cat /not/a/real/file/so/this/will/error
